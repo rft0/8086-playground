@@ -30,11 +30,17 @@ class AsmError extends Error {
 function parseNumber(tok) {
   // returns value or null if not a number token
   if (/^0x[0-9a-f]+$/i.test(tok)) return parseInt(tok.slice(2), 16);
-  if (/^[0-9][0-9a-f]*h$/i.test(tok)) return parseInt(tok.slice(0, -1), 16);
+  // h-suffixed hex may start with a letter too (ABCDh); wins over identifiers
+  if (/^[0-9a-f]+h$/i.test(tok)) return parseInt(tok.slice(0, -1), 16);
   if (/^[01]+b$/i.test(tok)) return parseInt(tok.slice(0, -1), 2);
   if (/^[0-9]+$/.test(tok)) return parseInt(tok, 10);
   if (/^'.'$/.test(tok) || /^".."?$/.test(tok)) return null; // handled by lexer
   return null;
+}
+
+// Names that the lexer would read as a number literal instead of a symbol.
+function looksLikeNumber(name) {
+  return /^[0-9a-f]+h$/i.test(name) || /^[01]+b$/i.test(name) || /^[0-9]/.test(name);
 }
 
 const IDENT_RE = /^[A-Za-z_.@?][A-Za-z0-9_.@?]*$/;
@@ -65,7 +71,10 @@ function lexExpr(s, line) {
     const m = s.slice(i).match(/^[A-Za-z0-9_.@?]+/);
     if (!m) throw new AsmError(`unexpected character '${c}' in expression`, line);
     const word = m[0];
-    const n = parseNumber(word);
+    const up = word.toUpperCase();
+    // AH/BH/CH/DH would also parse as hex (Ah = 0xA); keep them identifiers
+    const isReg = up in REG8 || up in REG16 || up in SREG;
+    const n = isReg ? null : parseNumber(word);
     if (n !== null) toks.push({ t:'num', v:n });
     else if (IDENT_RE.test(word)) toks.push({ t:'ident', v:word });
     else throw new AsmError(`bad token '${word}' in expression`, line);
@@ -945,6 +954,8 @@ function setSymbol(symbols, name, value, isConst, pass, line) {
   const key = name.toUpperCase();
   if (key in REG8 || key in REG16 || key in SREG || key in INSTR || DIRECTIVES.has(key) || key in PREFIXES)
     throw new AsmError(`'${name}' is a reserved word`, line);
+  if (looksLikeNumber(name))
+    throw new AsmError(`'${name}' would be read as a number literal; pick another name`, line);
   if (pass === 1 && symbols.has(key))
     throw new AsmError(`duplicate symbol '${name}'`, line);
   symbols.set(key, { value, isConst });

@@ -202,6 +202,7 @@ function highlightLine(line) {
       const up = ident.toUpperCase();
       const rest = code.slice(re.lastIndex);
       if (REGISTERS.has(up)) html += `<span class="tok-r">${esc(ident)}</span>`;
+      else if (/^[0-9A-F]+H$/.test(up)) html += `<span class="tok-n">${esc(ident)}</span>`;
       else if (KEYWORDS.has(up)) html += `<span class="tok-m">${esc(ident)}</span>`;
       else if (/^\s*:/.test(rest)) html += `<span class="tok-l">${esc(ident)}</span>`;
       else html += esc(ident);
