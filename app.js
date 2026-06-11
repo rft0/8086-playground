@@ -152,6 +152,7 @@ const el = {
   status: document.getElementById('status'),
   examples: document.getElementById('examples'),
   assemble: document.getElementById('btn-assemble'),
+  asmRun: document.getElementById('btn-asm-run'),
   download: document.getElementById('btn-download'),
   copy: document.getElementById('btn-copy'),
   listing: document.getElementById('tab-listing'),
@@ -481,18 +482,130 @@ function updateRunView() {
 el.src.addEventListener('input', onSourceEdited);
 el.src.addEventListener('scroll', syncScroll);
 
-el.src.addEventListener('keydown', e => {
-  if (e.key === 'Tab') {
-    e.preventDefault();
+/* All programmatic edits go through execCommand('insertText') so the
+   browser's native undo/redo stack (Ctrl+Z / Ctrl+Y) keeps working. */
+function editorInsert(text) {
+  if (!document.execCommand('insertText', false, text)) {
+    // fallback for browsers without execCommand support (loses undo history)
     const { selectionStart: a, selectionEnd: b, value } = el.src;
-    el.src.value = value.slice(0, a) + '    ' + value.slice(b);
-    el.src.selectionStart = el.src.selectionEnd = a + 4;
+    el.src.value = value.slice(0, a) + text + value.slice(b);
+    el.src.selectionStart = el.src.selectionEnd = a + text.length;
     onSourceEdited();
   }
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+}
+
+function editorReplaceRange(start, end, text) {
+  el.src.setSelectionRange(start, end);
+  editorInsert(text);
+}
+
+// Full-line span of the current selection (a selection ending exactly at the
+// start of a line does not include that line).
+function selectedLineRange() {
+  const v = el.src.value;
+  const selA = el.src.selectionStart;
+  let selB = el.src.selectionEnd;
+  if (selB > selA && v[selB - 1] === '\n') selB--;
+  const start = v.lastIndexOf('\n', selA - 1) + 1;
+  let end = v.indexOf('\n', selB);
+  if (end < 0) end = v.length;
+  return { start, end };
+}
+
+// mode: 'comment' | 'uncomment' | 'toggle'
+function setLinesComment(mode) {
+  const v = el.src.value;
+  const { start, end } = selectedLineRange();
+  const lines = v.slice(start, end).split('\n');
+  const allComment = lines.filter(l => l.trim()).every(l => /^\s*;/.test(l));
+  const comment = mode === 'comment' ? true : mode === 'uncomment' ? false : !allComment;
+  const out = lines.map(l => {
+    if (!l.trim()) return l;
+    if (comment) return /^\s*;/.test(l) && mode === 'comment' ? l : '; ' + l;
+    return l.replace(/^(\s*); ?/, '$1');
+  }).join('\n');
+  if (out === v.slice(start, end)) return;
+  editorReplaceRange(start, end, out);
+  el.src.setSelectionRange(start, start + out.length);
+}
+
+// Ctrl+K chord state (Ctrl+K, C → comment; Ctrl+K, U → uncomment)
+let chordPending = false, chordTimer = null;
+
+el.src.addEventListener('keydown', e => {
+  const v = el.src.value;
+  const selA = el.src.selectionStart, selB = el.src.selectionEnd;
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if (chordPending) {
+    if (e.key === 'Control' || e.key === 'Meta' || e.key === 'Shift' || e.key === 'Alt')
+      return; // modifier press keeps the chord open
+    chordPending = false;
+    clearTimeout(chordTimer);
+    const k = e.key.toLowerCase();
+    if (k === 'c') { e.preventDefault(); setLinesComment('comment'); return; }
+    if (k === 'u') { e.preventDefault(); setLinesComment('uncomment'); return; }
+    // any other key falls through and is handled normally
+  }
+  if (ctrl && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    chordPending = true;
+    clearTimeout(chordTimer);
+    chordTimer = setTimeout(() => { chordPending = false; }, 2000);
+    return;
+  }
+
+  if (e.key === 'Enter' && ctrl) { // Ctrl+Enter: assemble; +Shift: also run
+    e.preventDefault();
+    if (e.shiftKey) assembleAndRun();
+    else doAssemble();
+    return;
+  }
+
+  if (e.key === 'Tab') {                     // indent / unindent
+    e.preventDefault();
+    if (!e.shiftKey && !v.slice(selA, selB).includes('\n')) {
+      editorInsert('    ');
+      return;
+    }
+    const { start, end } = selectedLineRange();
+    const out = v.slice(start, end).split('\n')
+      .map(l => e.shiftKey ? l.replace(/^(\t| {1,4})/, '') : '    ' + l)
+      .join('\n');
+    editorReplaceRange(start, end, out);
+    el.src.setSelectionRange(start, start + out.length);
+    return;
+  }
+
+  if (e.key === 'Enter' && !e.shiftKey && !e.altKey) { // auto-indent new line
+    e.preventDefault();
+    const lineStart = v.lastIndexOf('\n', selA - 1) + 1;
+    const indent = v.slice(lineStart, selA).match(/^[ \t]*/)[0];
+    editorInsert('\n' + indent);
+    return;
+  }
+
+  if (ctrl && e.key === '/') {               // Ctrl+/: toggle ; comment
+    e.preventDefault();
+    setLinesComment('toggle');
+    return;
+  }
+
+  if (ctrl && (e.key === 'd' || e.key === 'D')) { // Ctrl+D: duplicate line(s)
+    e.preventDefault();
+    const { start, end } = selectedLineRange();
+    const seg = v.slice(start, end);
+    editorReplaceRange(end, end, '\n' + seg);
+    el.src.setSelectionRange(end + 1, end + 1 + seg.length);
+    return;
+  }
+
+  if (ctrl && (e.key === 's' || e.key === 'S')) { // Ctrl+S: assemble, not save
     e.preventDefault();
     doAssemble();
+    return;
   }
+  // Ctrl+Z / Ctrl+Y are intentionally not intercepted: native undo/redo.
 });
 
 el.assemble.addEventListener('click', doAssemble);
@@ -556,15 +669,28 @@ el.console.addEventListener('keydown', e => {
   else if (machine.cpu.waiting && !machine.running) updateRunView();
 });
 
+function selectTab(name) {
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === name));
+  for (const n of ['run', 'listing', 'hex', 'symbols']) {
+    document.getElementById('tab-' + n).hidden = n !== name;
+  }
+}
+
 document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    for (const name of ['run', 'listing', 'hex', 'symbols']) {
-      document.getElementById('tab-' + name).hidden = name !== tab.dataset.tab;
-    }
-  });
+  tab.addEventListener('click', () => selectTab(tab.dataset.tab));
 });
+
+function assembleAndRun() {
+  pauseRun();
+  doAssemble();
+  if (!lastResult || !lastResult.ok || !lastResult.bytes.length) return;
+  selectTab('run');
+  machineLoad();
+  startRun();
+}
+
+el.asmRun.addEventListener('click', assembleAndRun);
 
 for (const name of Object.keys(EXAMPLES)) {
   const opt = document.createElement('option');

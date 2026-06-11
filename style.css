@@ -65,6 +65,8 @@ select:hover, button:hover:not(:disabled) { border-color: var(--accent-dark); }
 button:disabled { opacity: 0.45; cursor: default; }
 #btn-assemble { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
 #btn-assemble:hover { filter: brightness(1.15); }
+#btn-asm-run { background: #1f7a3d; border-color: #1f7a3d; color: #fff; }
+#btn-asm-run:hover { filter: brightness(1.15); }
 
 main {
   flex: 1 1 auto;

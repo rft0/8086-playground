@@ -25,6 +25,19 @@ pause until you click the console and type.
 
 Add `#autorun` to the URL to run the loaded program immediately.
 
+### Editor shortcuts
+
+| Keys | Action |
+|---|---|
+| `Ctrl+Enter` / `Ctrl+S` | Assemble |
+| `Ctrl+Shift+Enter` | Assemble & run |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / redo |
+| `Tab` / `Shift+Tab` | Indent / unindent line or selection |
+| `Enter` | New line with auto-indent |
+| `Ctrl+/` | Toggle `;` comment on line or selection |
+| `Ctrl+K, C` / `Ctrl+K, U` | Comment / uncomment line or selection |
+| `Ctrl+D` | Duplicate line or selection |
+
 ## Development
 
 ```
