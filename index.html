@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8086 Assembler</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="chip">8086</span>
+    <h1>Assembler</h1>
+  </div>
+  <div class="toolbar">
+    <label for="examples">Example:</label>
+    <select id="examples"></select>
+    <button id="btn-assemble" title="Ctrl+Enter">Assemble</button>
+    <button id="btn-download" disabled>Download .COM</button>
+    <button id="btn-copy" disabled>Copy hex</button>
+  </div>
+</header>
+
+<main>
+  <section class="pane editor-pane">
+    <div class="editor">
+      <div class="gutter" id="gutter"></div>
+      <div class="code-area">
+        <pre id="highlight" aria-hidden="true"></pre>
+        <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off"></textarea>
+      </div>
+    </div>
+    <div id="errors" class="errors" hidden></div>
+  </section>
+
+  <section class="pane output-pane">
+    <nav class="tabs">
+      <button class="tab active" data-tab="run">Run</button>
+      <button class="tab" data-tab="listing">Listing</button>
+      <button class="tab" data-tab="hex">Hex dump</button>
+      <button class="tab" data-tab="symbols">Symbols</button>
+    </nav>
+    <div class="tab-body run-body" id="tab-run">
+      <div class="run-controls">
+        <button id="btn-run">▶ Run</button>
+        <button id="btn-step">Step</button>
+        <button id="btn-reset">⟲ Reset</button>
+        <span id="run-state" class="dim"></span>
+      </div>
+      <div class="reg-grid" id="reg-grid"></div>
+      <div class="flag-row" id="flag-row"></div>
+      <div class="next-instr" id="next-instr"></div>
+      <pre id="console" tabindex="0" title="Click here and type to send keyboard input to the program"></pre>
+    </div>
+    <div class="tab-body" id="tab-listing" hidden></div>
+    <div class="tab-body" id="tab-hex" hidden></div>
+    <div class="tab-body" id="tab-symbols" hidden></div>
+  </section>
+</main>
+
+<footer id="status">Ready</footer>
+
+<script src="assembler.js"></script>
+<script src="emulator.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<!-- Dev-only smoke test: assemble + run hello world in the browser engine.
+     Check with: msedge --headless --dump-dom test-browser.html -->
+<html>
+<head><meta charset="UTF-8"><title>smoke</title></head>
+<body>
+<div id="result">running…</div>
+<script src="assembler.js"></script>
+<script src="emulator.js"></script>
+<script>
+try {
+  const r = Assembler8086.assemble(
+    "org 100h\nmov ah, 09h\nmov dx, msg\nint 21h\nmov ax, 4C42h\nint 21h\nmsg: db 'browser-ok$'");
+  if (!r.ok) throw new Error('assemble failed');
+  const cpu = new Emu8086.CPU8086();
+  let out = '';
+  const dos = Emu8086.createDOS(t => { out += t; });
+  cpu.intHook = dos.hook;
+  cpu.load(r.bytes, r.origin);
+  while (!cpu.halted && !cpu.exited && cpu.instrCount < 10000) cpu.step();
+  document.getElementById('result').textContent =
+    `SMOKE: out=${out} exit=${cpu.exitCode} instr=${cpu.instrCount}`;
+} catch (e) {
+  document.getElementById('result').textContent = 'SMOKE FAIL: ' + e.message;
+}
+</script>
+</body>
+</html>
