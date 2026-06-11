@@ -419,7 +419,7 @@ function startRun() {
   if (machineStopped()) machineLoad(); // restart a finished program
   machine.running = true;
   updateRunView();
-  el.console.focus();
+  el.console.focus({ preventScroll: true });
   runTick();
 }
 

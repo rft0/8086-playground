@@ -25,12 +25,16 @@ html, body {
 }
 
 body { display: flex; flex-direction: column; }
+@supports (height: 100dvh) {
+  body { height: 100dvh; } /* track the real viewport when mobile URL bars collapse */
+}
 
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   padding: 10px 16px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
@@ -49,7 +53,8 @@ header {
   padding: 3px 7px;
 }
 
-.toolbar { display: flex; align-items: center; gap: 8px; }
+.toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.toolbar > * { flex-shrink: 0; } /* wrap to the next row instead of squeezing */
 .toolbar label { color: var(--fg-dim); }
 
 select, button {
@@ -85,6 +90,7 @@ main {
   border-radius: 8px;
   overflow: hidden;
   min-height: 0;
+  min-width: 0; /* grid items must be allowed to shrink below content width */
 }
 
 /* ------- editor ------- */
@@ -221,10 +227,10 @@ main {
   flex-direction: column;
   gap: 10px;
   white-space: normal;
-  overflow: hidden;
+  overflow: hidden auto; /* scroll vertically when the panel is short (mobile) */
 }
 
-.run-controls { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.run-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 0 0 auto; }
 #btn-run { background: #1f7a3d; border-color: #1f7a3d; color: #fff; min-width: 86px; }
 #btn-run.running { background: #8a6d1f; border-color: #8a6d1f; }
 #btn-run:hover:not(:disabled) { filter: brightness(1.15); }
@@ -301,5 +307,27 @@ footer.ok { color: var(--green); }
 footer.err { color: var(--red); }
 
 @media (max-width: 900px) {
-  main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(260px, 1fr) minmax(380px, 1.2fr);
+  }
+}
+
+@media (max-width: 600px) {
+  html, body { font-size: 13px; }
+  header { padding: 8px 10px; }
+  .brand h1 { font-size: 15px; }
+  .toolbar label { display: none; }       /* "Example:" — the select explains itself */
+  .toolbar { gap: 6px; }
+  select, button { padding: 6px 10px; font-size: 13px; }
+  #examples { max-width: 46vw; }
+  main { padding: 6px; gap: 6px; }
+  .editor { font-size: 12.5px; }
+  .gutter { min-width: 34px; padding-right: 6px; }
+  .tabs { overflow-x: auto; }
+  .tab { padding: 8px 11px; white-space: nowrap; }
+  .tab-body { padding: 8px; font-size: 12px; }
+  .reg-grid { grid-template-columns: repeat(2, 1fr); }
+  #run-state { flex-basis: 100%; margin-left: 0; }
+  footer { padding: 5px 10px; }
 }
