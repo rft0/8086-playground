@@ -3,6 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="8086 assembler and emulator running entirely in the browser — write, assemble, run, and step through real machine code with live registers and a DOS console.">
+<meta name="author" content="rft0">
+<meta name="keywords" content="8086, assembly, assembler, emulator, x86, asm, online, browser, playground">
+<meta name="theme-color" content="#14161c">
+
+<!-- Open Graph (Facebook, Discord, LinkedIn, …) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="8086 Playground">
+<meta property="og:title" content="8086 Assembler & Emulator — in the browser">
+<meta property="og:description" content="Write, assemble, run, and step through real 8086 machine code with live registers and a DOS console. No server, no dependencies.">
+<meta property="og:url" content="https://rft0.github.io/8086-playground/">
+<meta property="og:image" content="https://rft0.github.io/8086-playground/preview.png">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="8086 Assembler & Emulator — in the browser">
+<meta name="twitter:description" content="Write, assemble, run, and step through real 8086 machine code with live registers and a DOS console. No server, no dependencies.">
+<meta name="twitter:image" content="https://rft0.github.io/8086-playground/preview.png">
+
 <title>8086 Assembler</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -28,7 +47,7 @@
       <div class="gutter" id="gutter"></div>
       <div class="code-area">
         <pre id="highlight" aria-hidden="true"></pre>
-        <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off"></textarea>
+        <textarea id="src" aria-label="Assembly source code editor" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off"></textarea>
       </div>
     </div>
     <div id="errors" class="errors" hidden></div>
@@ -51,7 +70,7 @@
       <div class="reg-grid" id="reg-grid"></div>
       <div class="flag-row" id="flag-row"></div>
       <div class="next-instr" id="next-instr"></div>
-      <pre id="console" tabindex="0" title="Click here and type to send keyboard input to the program"></pre>
+      <pre id="console" tabindex="0" aria-label="Program console — output appears here; type to send keyboard input" title="Click here and type to send keyboard input to the program"></pre>
     </div>
     <div class="tab-body" id="tab-listing" hidden></div>
     <div class="tab-body" id="tab-hex" hidden></div>
